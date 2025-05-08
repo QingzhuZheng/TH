@@ -5,6 +5,48 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import LabelEncoder
 import streamlit as st
 
+# 自定义 CSS 样式
+custom_css = """
+<style>
+    /* 设置标题颜色和样式 */
+    h1 {
+        color: #007BFF;
+        text-align: center;
+    }
+    /* 设置子标题颜色 */
+    h2 {
+        color: #6C757D;
+    }
+    /* 设置输入框和选择框样式 */
+    .stTextInput>div>div>input, .stSelectbox>div>div>select {
+        border-radius: 5px;
+        border: 1px solid #CED4DA;
+        padding: 5px;
+    }
+    /* 设置按钮样式 */
+    .stButton>button {
+        background-color: #28A745;
+        color: white;
+        border-radius: 5px;
+        padding: 10px 20px;
+    }
+    /* 设置成功消息样式 */
+    .stSuccess {
+        background-color: #D4EDDA;
+        color: #155724;
+        padding: 10px;
+        border-radius: 5px;
+    }
+    /* 设置错误消息样式 */
+    .stError {
+        background-color: #F8D7DA;
+        color: #721C24;
+        padding: 10px;
+        border-radius: 5px;
+    }
+</style>
+"""
+st.markdown(custom_css, unsafe_allow_html=True)
 
 # 加载数据
 try:
@@ -74,16 +116,29 @@ st.title("随机森林分类模型预测")
 
 # 输入特征
 st.subheader("请输入特征值")
-input_features = {}
-for feature in X_train.columns:
-    if feature == 'Comb':
-        unique_values = le_comb.classes_
-        input_features[feature] = le_comb.transform([st.selectbox(f"{feature}", unique_values)])[0]
-    elif feature == 'Edema':
-        unique_values = le_edema.classes_
-        input_features[feature] = le_edema.transform([st.selectbox(f"{feature}", unique_values)])[0]
-    else:
-        input_features[feature] = st.number_input(f"{feature}", value=0.0)
+
+# 使用两列布局
+col1, col2 = st.columns(2)
+with col1:
+    for i, feature in enumerate(X_train.columns[:len(X_train.columns) // 2]):
+        if feature == 'Comb':
+            unique_values = le_comb.classes_
+            input_features[feature] = le_comb.transform([st.selectbox(f"{feature}", unique_values)])[0]
+        elif feature == 'Edema':
+            unique_values = le_edema.classes_
+            input_features[feature] = le_edema.transform([st.selectbox(f"{feature}", unique_values)])[0]
+        else:
+            input_features[feature] = st.number_input(f"{feature}", value=0.0)
+with col2:
+    for feature in X_train.columns[len(X_train.columns) // 2:]:
+        if feature == 'Comb':
+            unique_values = le_comb.classes_
+            input_features[feature] = le_comb.transform([st.selectbox(f"{feature}", unique_values)])[0]
+        elif feature == 'Edema':
+            unique_values = le_edema.classes_
+            input_features[feature] = le_edema.transform([st.selectbox(f"{feature}", unique_values)])[0]
+        else:
+            input_features[feature] = st.number_input(f"{feature}", value=0.0)
 
 # 预测按钮
 if st.button("进行预测"):
@@ -94,4 +149,5 @@ if st.button("进行预测"):
         st.success(f"预测结果: {decoded_prediction}")
     except Exception as e:
         st.error(f"预测过程中出现错误: {e}")
+    
 
