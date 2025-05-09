@@ -1,7 +1,6 @@
- 
-            
 import pandas as pd
 import shap
+import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import LabelEncoder
 import streamlit as st
@@ -52,7 +51,6 @@ st.markdown(custom_css, unsafe_allow_html=True)
 
 # 加载数据
 try:
-    # 修改为相对路径，假设数据文件和脚本在同一目录下
     train_data = pd.read_csv("1.csv")
     test_data = pd.read_csv("2.csv")
     print("训练数据基本信息：")
@@ -102,30 +100,26 @@ random_seed = 316
 
 # 使用最佳参数重新训练模型
 rf_best = RandomForestClassifier(
-    n_estimators=1000,  # 树的数量
-    max_features=2,     # 每次分裂时随机选择的特征数
-    min_samples_leaf=1,  # 每个叶子节点的最小样本数
-    max_leaf_nodes=11,  # 每棵树的最大叶节点数
-    bootstrap=True,     # 是否使用自助抽样
-    max_samples=66,     # 每个树的训练样本数量（对应 R 中的 sampsize）
+    n_estimators=1000,
+    max_features=2,
+    min_samples_leaf=1,
+    max_leaf_nodes=11,
+    bootstrap=True,
+    max_samples=66,
     random_state=random_seed
 )
 
 rf_best.fit(X_train, Y_train)
 
-# 初始化 SHAP 解释器
-explainer = shap.Explainer(rf_best, X_train)
-shap_values = explainer(X_train)
-
 # Streamlit 应用
-st.title("RF model for predicting disease progression")
+st.title("随机森林分类模型预测")
 
 # 布局调整，输入在左侧，输出在右侧
 col1, col2 = st.columns([1, 1])
 
 # 输入特征（左侧列）
 with col1:
-    st.subheader("Please enter the MRE features")
+    st.subheader("请输入特征值")
     input_features = {}
     for feature in X_train.columns:
         if feature == 'Comb':
@@ -137,29 +131,47 @@ with col1:
         else:
             input_features[feature] = st.number_input(f"{feature}", value=0.0)
 
-    # 预测按钮（左侧列）
-    if st.button("Predict"):
+# 预测按钮（左侧列）
+if st.button("进行预测"):
+    try:
+        input_df = pd.DataFrame([input_features])
+        
+        # 模型预测
+        prediction = rf_best.predict(input_df)
+        decoded_prediction = le_status.inverse_transform(prediction)[0]
+        
+        # 初始化 SHAP 解释器
         try:
-            input_df = pd.DataFrame([input_features])
-            prediction = rf_best.predict(input_df)
-            decoded_prediction = le_status.inverse_transform(prediction)[0]
-            with col2:
-                st.success(f"Prediction: {decoded_prediction}")
-                # 计算用户输入的 SHAP 值
-                input_shap_values = explainer(input_df)
-                # 获取预测类别的索引
-                pred_class_index = prediction[0]
-                # 显示 waterfall 图
-                fig, ax = plt.subplots()
-                shap.plots.waterfall(input_shap_values[0][:, pred_class_index], show=False)
-                st.pyplot(fig)
-                # 显示 summary 图
-                fig, ax = plt.subplots()
-                shap.summary_plot(shap_values.values[:, :, pred_class_index], X_train, feature_names=X_train.columns, show=False)
-                st.pyplot(fig)
-        except Exception as e:
-            with col2:
-                st.error(f"预测过程中出现错误: {e}")
+            # 尝试使用最新 API
+            explainer = shap.Explainer(rf_best.predict_proba, X_train)
+            shap_values = explainer(input_df)
+        except:
+            # 回退到旧版 API
+            st.warning("使用旧版 SHAP API 以兼容当前环境")
+            explainer = shap.TreeExplainer(rf_best)
+            shap_values = explainer.shap_values(input_df)
+        
+        # 获取预测类别的索引
+        pred_class_index = prediction[0]
+        
+        # 显示结果（右侧列）
+        with col2:
+            st.success(f"预测结果: {decoded_prediction}")
             
+            # 显示 waterfall 图（保留）
+            st.subheader("SHAP 特征重要性图")
+            fig, ax = plt.subplots(figsize=(10, 6))
+            if isinstance(shap_values, list):
+                # 旧版 API 返回列表
+                shap.plots.waterfall(shap.Explainer(rf_best).shap_values(input_df)[pred_class_index][0])
+            else:
+                # 新版 API 返回 Explanation 对象
+                shap.plots.waterfall(shap_values[0][:, pred_class_index])
+            st.pyplot(fig)
             
+            # 移除了 SHAP 特征重要性汇总图
+            
+    except Exception as e:
+        with col2:
+            st.error(f"预测过程中出现错误: {e}")
             
