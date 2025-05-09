@@ -150,4 +150,3 @@ if st.button("进行预测"):
     except Exception as e:
         st.error(f"预测过程中出现错误: {e}")
     
-
