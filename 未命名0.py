@@ -1,9 +1,11 @@
+ 
+            
 import pandas as pd
 import shap
-import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import LabelEncoder
 import streamlit as st
+import matplotlib.pyplot as plt
 
 # 自定义 CSS 样式
 custom_css = """
@@ -18,27 +20,27 @@ custom_css = """
         color: #6C757D;
     }
     /* 设置输入框和选择框样式 */
-    .stTextInput>div>div>input, .stSelectbox>div>div>select {
+   .stTextInput>div>div>input,.stSelectbox>div>div>select {
         border-radius: 5px;
         border: 1px solid #CED4DA;
         padding: 5px;
     }
     /* 设置按钮样式 */
-    .stButton>button {
+   .stButton>button {
         background-color: #28A745;
         color: white;
         border-radius: 5px;
         padding: 10px 20px;
     }
     /* 设置成功消息样式 */
-    .stSuccess {
+   .stSuccess {
         background-color: #D4EDDA;
         color: #155724;
         padding: 10px;
         border-radius: 5px;
     }
     /* 设置错误消息样式 */
-    .stError {
+   .stError {
         background-color: #F8D7DA;
         color: #721C24;
         padding: 10px;
@@ -111,26 +113,21 @@ rf_best = RandomForestClassifier(
 
 rf_best.fit(X_train, Y_train)
 
+# 初始化 SHAP 解释器
+explainer = shap.Explainer(rf_best, X_train)
+shap_values = explainer(X_train)
+
 # Streamlit 应用
-st.title("随机森林分类模型预测")
+st.title("RF model for predicting disease progression")
 
-# 输入特征
-st.subheader("请输入特征值")
+# 布局调整，输入在左侧，输出在右侧
+col1, col2 = st.columns([1, 1])
 
-# 使用两列布局
-col1, col2 = st.columns(2)
+# 输入特征（左侧列）
 with col1:
-    for i, feature in enumerate(X_train.columns[:len(X_train.columns) // 2]):
-        if feature == 'Comb':
-            unique_values = le_comb.classes_
-            input_features[feature] = le_comb.transform([st.selectbox(f"{feature}", unique_values)])[0]
-        elif feature == 'Edema':
-            unique_values = le_edema.classes_
-            input_features[feature] = le_edema.transform([st.selectbox(f"{feature}", unique_values)])[0]
-        else:
-            input_features[feature] = st.number_input(f"{feature}", value=0.0)
-with col2:
-    for feature in X_train.columns[len(X_train.columns) // 2:]:
+    st.subheader("Please enter the MRE features")
+    input_features = {}
+    for feature in X_train.columns:
         if feature == 'Comb':
             unique_values = le_comb.classes_
             input_features[feature] = le_comb.transform([st.selectbox(f"{feature}", unique_values)])[0]
@@ -140,13 +137,29 @@ with col2:
         else:
             input_features[feature] = st.number_input(f"{feature}", value=0.0)
 
-# 预测按钮
-if st.button("进行预测"):
-    try:
-        input_df = pd.DataFrame([input_features])
-        prediction = rf_best.predict(input_df)
-        decoded_prediction = le_status.inverse_transform(prediction)[0]
-        st.success(f"预测结果: {decoded_prediction}")
-    except Exception as e:
-        st.error(f"预测过程中出现错误: {e}")
-    
+    # 预测按钮（左侧列）
+    if st.button("Predict"):
+        try:
+            input_df = pd.DataFrame([input_features])
+            prediction = rf_best.predict(input_df)
+            decoded_prediction = le_status.inverse_transform(prediction)[0]
+            with col2:
+                st.success(f"Prediction: {decoded_prediction}")
+                # 计算用户输入的 SHAP 值
+                input_shap_values = explainer(input_df)
+                # 获取预测类别的索引
+                pred_class_index = prediction[0]
+                # 显示 waterfall 图
+                fig, ax = plt.subplots()
+                shap.plots.waterfall(input_shap_values[0][:, pred_class_index], show=False)
+                st.pyplot(fig)
+                # 显示 summary 图
+                fig, ax = plt.subplots()
+                shap.summary_plot(shap_values.values[:, :, pred_class_index], X_train, feature_names=X_train.columns, show=False)
+                st.pyplot(fig)
+        except Exception as e:
+            with col2:
+                st.error(f"预测过程中出现错误: {e}")
+            
+            
+            
