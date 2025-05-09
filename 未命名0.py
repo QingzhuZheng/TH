@@ -112,14 +112,14 @@ rf_best = RandomForestClassifier(
 rf_best.fit(X_train, Y_train)
 
 # Streamlit 应用
-st.title("随机森林分类模型预测")
+st.title("RL model for predicting disease progression")
 
 # 布局调整，输入在左侧，输出在右侧
 col1, col2 = st.columns([1, 1])
 
 # 输入特征（左侧列）
 with col1:
-    st.subheader("请输入特征值")
+    st.subheader("Please enter the MRE features")
     input_features = {}
     for feature in X_train.columns:
         if feature == 'Comb':
@@ -132,7 +132,7 @@ with col1:
             input_features[feature] = st.number_input(f"{feature}", value=0.0)
 
 # 预测按钮（左侧列）
-if st.button("进行预测"):
+if st.button("Predict"):
     try:
         input_df = pd.DataFrame([input_features])
         
@@ -156,10 +156,10 @@ if st.button("进行预测"):
         
         # 显示结果（右侧列）
         with col2:
-            st.success(f"预测结果: {decoded_prediction}")
+            st.success(f"Prediction: {decoded_prediction}")
             
             # 显示 waterfall 图（保留）
-            st.subheader("SHAP 特征重要性图")
+            st.subheader("SHAP summary plot")
             fig, ax = plt.subplots(figsize=(10, 6))
             if isinstance(shap_values, list):
                 # 旧版 API 返回列表
