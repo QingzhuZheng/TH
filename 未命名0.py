@@ -13,6 +13,7 @@ custom_css = """
     h1 {
         color: #007BFF;
         text-align: center;
+        font-size: 28px; /* 减小标题字体大小 */
     }
     /* 设置子标题颜色 */
     h2 {
@@ -112,7 +113,7 @@ rf_best = RandomForestClassifier(
 rf_best.fit(X_train, Y_train)
 
 # Streamlit 应用
-st.title("RL model for predicting disease progression")
+st.title("Random Forest model for predicting disease progression")
 
 # 布局调整，输入在左侧，输出在右侧
 col1, col2 = st.columns([1, 1])
