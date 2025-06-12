@@ -13,7 +13,8 @@ custom_css = """
     h1 {
         color: #007BFF;
         text-align: center;
-        font-size: 26px; /* 减小标题字体大小 */
+        font-size: 24px !important; /* 添加!important强制生效 */
+        margin-bottom: 20px;
     }
     /* 设置子标题颜色 */
     h2 {
