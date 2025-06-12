@@ -119,17 +119,26 @@ col1, col2 = st.columns([1, 1])
 
 # 输入特征（左侧列）
 with col1:
-    st.subheader("Please enter the MRE features")
+    st.subheader("Please enter the MRE features in Random Forest model")
     input_features = {}
     for feature in X_train.columns:
+        # 创建特征显示名称的映射
+        display_name = feature
+        if feature == 'ADC':
+            display_name = 'Mural ADC'
+        elif feature == 'Comb':
+            display_name = 'Comb sign'
+        elif feature == 'Edema':
+            display_name = 'Mural edema'
+        
         if feature == 'Comb':
             unique_values = le_comb.classes_
-            input_features[feature] = le_comb.transform([st.selectbox(f"{feature}", unique_values)])[0]
+            input_features[feature] = le_comb.transform([st.selectbox(f"{display_name}", unique_values)])[0]
         elif feature == 'Edema':
             unique_values = le_edema.classes_
-            input_features[feature] = le_edema.transform([st.selectbox(f"{feature}", unique_values)])[0]
+            input_features[feature] = le_edema.transform([st.selectbox(f"{display_name}", unique_values)])[0]
         else:
-            input_features[feature] = st.number_input(f"{feature}", value=0.0)
+            input_features[feature] = st.number_input(f"{display_name}", value=0.0)
 
 # 预测按钮（左侧列）
 if st.button("Predict"):
