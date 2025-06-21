@@ -114,7 +114,7 @@ rf_best = RandomForestClassifier(
 rf_best.fit(X_train, Y_train)
 
 # Streamlit 应用
-st.title("Random Forest model for predicting disease progression")
+st.title("Random forest model for TH evaluation")
 
 # 布局调整，输入在左侧，输出在右侧
 col1, col2 = st.columns([1, 1])
